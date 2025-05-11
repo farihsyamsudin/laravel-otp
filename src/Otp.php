@@ -9,17 +9,18 @@ use Ichtrojan\Otp\Models\Otp as Model;
 class Otp
 {
     /**
+     * Generate an OTP for the given identifier.
+     *
      * @param string $identifier
      * @param string $type
      * @param int $length
-     * @param int $validity
-     * @return mixed
-     * @throws Exception
+     * @param int $validity (in minutes)
+     * @param bool $allowMultiple
+     * @return object
+     * @throws \Exception
      */
-    public function generate(string $identifier, string $type, int $length = 4, int $validity = 10) : object
+    public function generate(string $identifier, string $type, int $length = 4, int $validity = 10, bool $allowMultiple = false): object
     {
-        Model::where('identifier', $identifier)->where('valid', true)->delete();
-
         switch ($type) {
             case "numeric":
                 $token = $this->generateNumericToken($length);
@@ -31,16 +32,22 @@ class Otp
                 throw new Exception("{$type} is not a supported type");
         }
 
-        Model::create([
+        if (!$allowMultiple) {
+            // If multiple OTPs are not allowed or switched off, delete any existing OTP for the identifier, 
+            OtpModel::where('identifier', $identifier)->delete();
+        }
+
+        OtpModel::create([
             'identifier' => $identifier,
             'token' => $token,
-            'validity' => $validity
+            'validity' => $validity,
+            'valid' => true,
         ]);
 
         return (object)[
             'status' => true,
             'token' => $token,
-            'message' => 'OTP generated'
+            'message' => $allowMultiple ? 'OTP generated (multiple supported)' : 'OTP generated'
         ];
     }
 

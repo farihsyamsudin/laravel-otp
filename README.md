@@ -32,13 +32,20 @@ php artisan migrate
 
 use Ichtrojan\Otp\Otp;
 
-(new Otp)->generate(string $identifier, string $type, int $length = 4, int $validity = 10);
+(new Otp)->generate(string $identifier, string $type, int $length = 4, int $validity = 10, bool $allowMultiple);
 ```
 
 * `$identifier`: The identity that will be tied to the OTP.
 * `$type`: The type of token to be generated, supported types are `numeric` and `alpha_numeric`
 * `$length (optional | default = 4)`: The length of token to be generated.
 * `$validity (optional | default = 10)`: The validity period of the OTP in minutes.
+* `$allowMultiple (optional | default = false)`: If set to true, multiple OTPs can exist for the same identifier at the same time. If false, existing OTPs for the identifier will be deleted before generating a new one.
+
+### Why Use $allowMultiple = true?
+
+The $allowMultiple parameter is especially useful when your mail server might experience delays or when there is a concern that a user may request OTPs multiple times before the first OTP arrives. In situations like this, if the user makes two OTP requests, they might receive the first OTP (which could still be valid), even though they requested the second one. By setting $allowMultiple = true, you ensure that both OTPs will remain active, allowing the user to successfully authenticate with either token.
+
+This approach prevents situations where the first OTP expires before the user has a chance to use it, ensuring a better user experience in case of delays.
 
 #### Sample
 
